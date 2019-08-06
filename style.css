@@ -1,0 +1,15 @@
+.question-block{
+   border: 1px solid black;
+   padding: 10px;
+   margin: 10px;
+}
+
+.answer-block{
+   padding: 3px;
+   margin: 3px 0;
+   overflow-wrap: break-word;
+}
+
+.answer-block i {
+   margin-right: 3px;
+}
