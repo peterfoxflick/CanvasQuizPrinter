@@ -9,22 +9,24 @@ async function main(){
    var quizID = params["quizID"]
    var schoolID = params["schoolID"]
 
-
-   //    0  1           2             3      4       5    6     7
+   //index 0  1           2             3    4       5   6  7
    //https://school.instructure.com/courses/id/quizzes/id/take
    var baseUrl = "https://" + schoolID + ".instructure.com/api/v1"
 
    //Now get submissions to see answers
    var questions = await getQuestions(baseUrl, courseID, quizID);
+   var headerData = await getQuizHeader(baseUrl, courseID, quizID);
 
    //Filter answers baseed on correctness
    if(questions.length == 0)
       return;
 
-
    var output = fillPage(questions)
-
    document.getElementById("question-holder").innerHTML = output;
+
+   var header = fillHeader(headerData)
+   document.getElementById("header").innerHTML = header;
+
 }
 
 
@@ -34,6 +36,15 @@ async function main(){
  *******************************************************/
 async function getQuestions(baseURL, courseID, quizID){
    var url = baseURL + "/courses/" + courseID + "/quizzes/" + quizID + "/questions"
+   return await fetch(url).then(r => r.text()).then(result => {
+       var data = parseJSON(result);
+       return data
+   })
+
+}
+
+async function getQuizHeader(baseURL, courseID, quizID){
+   var url = baseURL + "/courses/" + courseID + "/quizzes/" + quizID
    return await fetch(url).then(r => r.text()).then(result => {
        var data = parseJSON(result);
        return data
@@ -57,6 +68,35 @@ function fillPage(questions) {
 
 
 
+function fillHeader(h){
+   var output = `<div class="row">`
+   output += `<div class="col"><h1>Name : ` + "_".repeat(20) + `</h1></div><div class="text-right col"><h1 class="display">____ / ` + h.points_possible + ` </h1></div>`
+   output += `</div>`
+   output += `<div class="row"><div class="col"><h1 class="display-4">` + h.title       + `</h1></div></div>`
+   output += `<div class="row"><div class="col"><p class="lead">`       + h.description + `</p></div></div>`
+
+   if(h.time_limit > 0)
+      output += `<div class="row"><div class="col"><p>Time Limit: ` + minToString(h.time_limit) + `</p></div></div>`
+
+   output += `</div>`
+
+   return output;
+}
+
+
+
+// https://www.w3resource.com/javascript-exercises/javascript-basic-exercise-51.php
+function minToString(num){
+  var hours = Math.floor(num / 60);
+  var minutes = num % 60;
+  return hours + ":" + minutes;
+}
+
+
+
+
+
+
 /*******************************************************
  * get Question Text
  * return the HTML for each question based on its type
@@ -64,8 +104,6 @@ function fillPage(questions) {
 function getQuestionText( question ) {
 
    var output = "";
-
-   console.log(question);
 
    switch(question.question_type) {
       case "calculated_question":
@@ -75,13 +113,13 @@ function getQuestionText( question ) {
          output = essayQuestion(question)
          break;
       case "file_upload_question":
-
+         output = textOnlyQuestion(question)
          break;
       case "fill_in_multiple_blanks_question":
-
+         output = fillInMultipleBlanksQuestion(question)
          break;
       case "matching_question":
-
+         output = matchingQuestion(question)
          break;
       case "multiple_answers_question":
          output = multipleAnswersQuestion(question)
@@ -90,7 +128,7 @@ function getQuestionText( question ) {
          output = multipleChoiceQuestion(question)
          break;
       case "multiple_dropdowns_question":
-
+         output = multipleDropdownsQuestion(question)
          break;
       case "numerical_question":
          output = shortAnswerQuestion(question)
@@ -114,20 +152,15 @@ function getQuestionText( question ) {
 }
 
 
-/*
-<div class="question-block">
-   <h3>Title</h3>
-   <p>Question Text</p>
+function pointsToText(q){
+   return `<p>____ / ` + q.points_possible + `</p>`
+}
 
-   <p>Answers?
-
-</div>
-*/
 function essayQuestion(question){
    var questionText = question.question_text;
 
    var output = `<div class="question-block">`
-   output += questionText
+   output += pointsToText(question) + questionText
 
    output += `<div class="answer-block">`
 
@@ -152,7 +185,7 @@ function calculatedQuestion(question){
    var questionText = question.question_text;
 
    var output = `<div class="question-block">`
-   output += questionText
+   output += pointsToText(question) + questionText
 
 
    var variables = question.answers[0].variables // array of name and value
@@ -176,7 +209,7 @@ function shortAnswerQuestion(question){
    var questionText = question.question_text;
 
    var output = `<div class="question-block">`
-   output += questionText
+   output += pointsToText(question) + questionText
 
    output += `<div class="answer-block">`
 
@@ -202,7 +235,9 @@ function shortAnswerQuestion(question){
 
 
 function textOnlyQuestion(question) {
-   var questionText = question.question_text;
+   console.log("HEREES THE TEEXT ONLY");
+   console.log(question)
+   var questionText = pointsToText(question) + question.question_text;
 
    var output = `<div class="question-block">`
    output += questionText
@@ -215,7 +250,7 @@ function trueFalseQuestion(question){
    var questionText = question.question_text;
 
    var output = `<div class="question-block">`
-   output += questionText
+   output += pointsToText(question) + questionText
 
    output += `<div class="answer-block">
                  <i class="far fa-circle"></i>True
@@ -232,11 +267,13 @@ function multipleChoiceQuestion(question){
    var answers = question.answers.shuffle();
 
    var output = `<div class="question-block">`
-   output += questionText
+   output += pointsToText(question) + questionText
 
    output += `<div class="answer-block">`
-   answers.forEach(a=>{
-      output += `<br><i class="far fa-circle"></i>`
+   answers.forEach(function(a, i){
+      if(i > 0)
+         output += `<br>`
+      output += `<i class="far fa-circle"></i>`
       output += a.text;
    })
 
@@ -250,12 +287,14 @@ function multipleAnswersQuestion(question){
    var answers = question.answers.shuffle();
 
    var output = `<div class="question-block">`
-   output += questionText
+   output += pointsToText(question) + questionText
 
 
    output += `<div class="answer-block">`
-   answers.forEach(a=>{
-      output += `<br><i class="far fa-square"></i>`
+   answers.forEach(function(a, i){
+      if(i > 0)
+         output += `<br>`
+      output += `<i class="far fa-square"></i>`
       output += a.text;
    })
 
@@ -263,7 +302,103 @@ function multipleAnswersQuestion(question){
    return output;
 }
 
+function fillInMultipleBlanksQuestion(question){
+   var regex = /\[[A-Za-z0-9]*\]/g
+   var questionText = question.question_text.replace(regex, "_________")
 
+   var output = `<div class="question-block">`
+   output += pointsToText(question) + questionText
+   output += `</div>`
+   return output;
+}
+
+
+
+function multipleDropdownsQuestion(question){
+   var questionText = question.question_text;
+   var answers = question.answers.shuffle();
+
+   var blanks = getBlanks(answers)
+   //Sort by order that they appear in the question
+   blanks.sort((a,b) => questionText.indexOf(a.blank) - questionText.indexOf(b.blank))
+
+
+   var output = `<div class="question-block">`
+   output += pointsToText(question) + questionText
+
+   output += `<div class="answer-block row">`
+   blanks.forEach(function(b, i){
+      output += `<div class="col-2">`
+      output += `<em>` + b.blank + `</em>`
+      b.answers.forEach(function(a, i){
+         output += `<br>`
+         output += `<i class="far fa-circle"></i>`
+         output += a;
+      })
+      output += `</div>`
+   })
+
+   output += `</div></div>`
+   return output;
+}
+
+function getBlanks(answers){
+   var blanks = new Set()
+
+   answers.forEach(a=>{
+      blanks.add(a.blank_id)
+   })
+
+   return getBlanksAnswers(answers, blanks)
+}
+
+function getBlanksAnswers(answers, blanks){
+   var output = []
+   // create a multiple choice for each blank
+   blanks.forEach(b=>{
+      var ans = answers.filter(a => a.blank_id == b);
+      var out = []
+      ans.forEach(a=>{
+         out.push(a.text)
+      })
+      var blank = {
+         blank: b,
+         answers: out
+      }
+      output.push(blank)
+   })
+   return output
+}
+
+
+function matchingQuestion(question){
+   var questionText = question.question_text;
+   var answers = question.answers.shuffle();
+   var matches = question.matches.shuffle();
+
+   var output = `<div class="question-block">`
+   output += pointsToText(question) + questionText
+
+   output += `<div class="answer-block row"><div class="col-3 text-right">`
+   answers.forEach(function(a, i){
+      if(i > 0)
+         output += `<br>`
+      output += a.text;
+      output += ` <i class="far fa-circle"></i>`
+   })
+
+   output += `</div><div class="col-3">`
+   matches.forEach(function(m, i){
+      if(i > 0)
+         output += `<br>`
+      output += `<i class="far fa-circle"></i>`
+      output += m.text;
+   })
+
+   output += `</div></div></div>`
+   return output;
+
+}
 
 
 
