@@ -6,6 +6,7 @@ Go to [the extension's page on the chrome web store](https://chrome.google.com/w
 
 ## Use
 To print a quiz from Canvas, go to that quiz and click on the extensions icon to the right of the URL bar. 
+
 It will look like this ![Logo](https://raw.githubusercontent.com/peterfoxflick/CanvasQuizPrinter/master/icon16.png).
 
 A new page should open and be populated with a printable version of the quiz.
