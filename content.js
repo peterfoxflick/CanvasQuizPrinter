@@ -13,34 +13,66 @@ async function main(){
    //https://school.instructure.com/courses/id/quizzes/id/take
    var baseUrl = "https://" + schoolID + ".instructure.com/api/v1"
 
+
    //Now get submissions to see answers
-   var questions = await getQuestions(baseUrl, courseID, quizID);
-   var headerData = await getQuizHeader(baseUrl, courseID, quizID);
+   var quizData = await getQuizHeader(baseUrl, courseID, quizID);
+   var questions = await getQuestions(baseUrl, courseID, quizID, quizData.question_count)
 
    //Filter answers baseed on correctness
-   if(questions.length == 0)
+   if(questions.length == 0) {
+      fillError("Error: There are no questions in this quiz")
       return;
+   }
 
    var output = fillPage(questions)
    document.getElementById("question-holder").innerHTML = output;
 
-   var header = fillHeader(headerData)
+   var header = fillHeader(quizData)
    document.getElementById("header").innerHTML = header;
-
 }
 
 
 /*******************************************************
  * Get Questions
  * return an array of all the questions
+ * TODO: use quiz.question_count to figure out pagination
  *******************************************************/
-async function getQuestions(baseURL, courseID, quizID){
-   var url = baseURL + "/courses/" + courseID + "/quizzes/" + quizID + "/questions"
-   return await fetch(url).then(r => r.text()).then(result => {
-       var data = parseJSON(result);
-       return data
+async function getQuestions(baseURL, courseID, quizID, questionsCount){
+
+   //build array of urls to use
+   let urls = []
+   let perPage = 10
+   var pagesCount = Math.ceil(questionsCount / perPage)
+   for(var page = 1; page <= pagesCount; page++){
+      let url = baseURL + "/courses/" + courseID + "/quizzes/" + quizID + "/questions?page=" + page + "&per_page=" + perPage
+      urls.push(url)
+   }
+
+   //call all urls
+   const promises = urls.map(fetchQuestion);
+    // wait until all promises are resolved
+
+
+   let questions = []
+   await Promise.all(promises).then(p => {
+      p.forEach(q => q.forEach(q => questions.push(q)))
    })
 
+   return questions
+}
+
+async function fetchQuestion(url){
+   return await fetch(url).then(r => {
+      if (!r.ok) {
+         fillError("Error " + r.status + ": " + r.statusText + "\n" + r.url)
+      }
+      return r.text()
+   }).then(result => {
+       var data = parseJSON(result);
+       return data
+   }).catch(error =>{
+      fillError(error)
+   })
 }
 
 async function getQuizHeader(baseURL, courseID, quizID){
@@ -70,7 +102,7 @@ function fillPage(questions) {
 
 function fillHeader(h){
    var output = `<div class="row">`
-   output += `<div class="col"><h1>Name : ` + "_".repeat(20) + `</h1></div><div class="text-right col"><h1 class="display">____ / ` + h.points_possible + ` </h1></div>`
+   output += `<div class="col"><h1>Name : ` + "_".repeat(20) + `</h1></div><div class="text-right col-2"><h1 class="display">____/` + h.points_possible + `</h1></div>`
    output += `</div>`
    output += `<div class="row"><div class="col"><h1 class="display-4">` + h.title       + `</h1></div></div>`
    output += `<div class="row"><div class="col"><p class="lead">`       + h.description + `</p></div></div>`
@@ -81,6 +113,10 @@ function fillHeader(h){
    output += `</div>`
 
    return output;
+}
+
+function fillError(text){
+   document.getElementById("question-holder").innerHTML = `<div class="alert alert-warning" role="alert">` + text + `</div>`
 }
 
 
@@ -151,9 +187,11 @@ function getQuestionText( question ) {
 
 }
 
-
 function pointsToText(q){
-   return `<p>____ / ` + q.points_possible + `</p>`
+   if(q.points_possible > 0)
+      return `<p>____ / ` + q.points_possible + `</p>`
+   else
+      return ``
 }
 
 function essayQuestion(question){
@@ -235,7 +273,6 @@ function shortAnswerQuestion(question){
 
 
 function textOnlyQuestion(question) {
-   console.log("HEREES THE TEEXT ONLY");
    console.log(question)
    var questionText = pointsToText(question) + question.question_text;
 
