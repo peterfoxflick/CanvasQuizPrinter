@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Canvas Quiz Printer",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Easily print quizzes from Canvas.",
   "background": {
     "scripts": ["background.js"],
@@ -9,8 +9,7 @@
   },
   "permissions": [
     "https://*/quizzes/*",
-    "activeTab",
-    "storage"
+    "activeTab"
   ],
   "browser_action": {
       "default_title": "Print this Quiz",
