@@ -14,3 +14,11 @@
 .answer-block i {
    margin-right: 3px;
 }
+
+@media print {
+
+   #no-print {
+      display: none;
+   }
+
+}

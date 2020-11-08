@@ -11,12 +11,15 @@ async function main(){
 
    //index 0  1           2             3    4       5   6  7
    //https://school.instructure.com/courses/id/quizzes/id/take
-   var baseUrl = "https://" + schoolID + ".instructure.com/api/v1"
+   var baseUrl = "https://" + schoolID + "/api/v1"
 
 
    //Now get submissions to see answers
    var quizData = await getQuizHeader(baseUrl, courseID, quizID);
    var questions = await getQuestions(baseUrl, courseID, quizID, quizData.question_count)
+   var noPrint = await getNoPrint()
+   document.getElementById("no-print").innerHTML = noPrint;
+
 
    //Filter answers baseed on correctness
    if(questions.length == 0) {
@@ -29,6 +32,8 @@ async function main(){
 
    var header = fillHeader(quizData)
    document.getElementById("header").innerHTML = header;
+
+
 }
 
 
@@ -437,6 +442,33 @@ function matchingQuestion(question){
 
 }
 
+
+async function getNoPrint() {
+
+   const feed = new Meed();
+   const pub  = await feed.publication("edtech-outpost")
+
+   if (pub.length > 0) {
+     let post = pub[0]
+     return `
+     <div class="alert alert-primary" role="alert">
+        <p><a href="` + post.link + `" class="alert-link">` + post.title + `</a></p>
+        <hr>
+        <p class="mb-0">P.S. Don't worry, I disapear when you print</p>
+
+
+     </div>`
+   }
+
+   return `
+   <div class="alert alert-primary" role="alert">
+      <p>If you find this useful <a href="https://chrome.google.com/webstore/detail/canvas-quiz-printer/aolnbenhahgdmbdgjdkphepifgdnphcl" class="alert-link">please leave a review.</a></p>
+      <hr>
+      <p class="mb-0">P.S. Don't worry, I disapear when you print</p>
+
+
+   </div>`
+}
 
 
 
