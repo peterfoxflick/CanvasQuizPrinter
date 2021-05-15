@@ -33,7 +33,8 @@ async function main(){
    var header = fillHeader(quizData)
    document.getElementById("header").innerHTML = header;
 
-
+   console.log("about to run")
+   formListeners()
 }
 
 
@@ -82,8 +83,12 @@ async function fetchQuestion(url){
 
 async function getQuizHeader(baseURL, courseID, quizID){
    var url = baseURL + "/courses/" + courseID + "/quizzes/" + quizID
+
+   console.log(url)
    return await fetch(url).then(r => r.text()).then(result => {
+      console.log(result)
        var data = parseJSON(result);
+       console.log(data)
        return data
    })
 
@@ -194,7 +199,7 @@ function getQuestionText( question ) {
 
 function pointsToText(q){
    if(q.points_possible > 0)
-      return `<p>____ / ` + q.points_possible + `</p>`
+      return `<p class="points">____ / ` + q.points_possible + `</p>`
    else
       return ``
 }
@@ -429,7 +434,7 @@ function matchingQuestion(question){
       output += ` <i class="far fa-circle"></i>`
    })
 
-   output += `</div><div class="col-3">`
+   output += `</div><div class="col">`
    matches.forEach(function(m, i){
       if(i > 0)
          output += `<br>`
@@ -444,7 +449,6 @@ function matchingQuestion(question){
 
 
 async function getNoPrint() {
-
    const feed = new Meed();
    const pub  = await feed.publication("edtech-outpost")
 
@@ -456,6 +460,38 @@ async function getNoPrint() {
         <hr>
         <p class="mb-0">P.S. Don't worry, I disapear when you print</p>
 
+
+        <div class="row">
+           <div class="col">
+              <div class="form-group">
+                 <label for="fontChoise">Font</label>
+                  <select class="form-control" id="fontChoise">
+                      <option>Helvetica Neue</option>
+                      <option>Amatic SC</option>
+                      <option>Comic Neue</option>
+                      <option>Cormorant Garamond</option>
+                      <option>Indie Flower</option
+                      <option>Open Sans</option>
+                      <option>Playfair Display</option>
+                      <option>Raleway</option>
+                      <option>Roboto Mono</option>
+                  </select>
+               </div>
+            </div>
+            <div class="col">
+               <div class="form-group">
+                  <label for="fontLarger">Size</label><br>
+                  <button type="button" class="btn btn-secondary" id="fontLarger">+</button>
+                  <button type="button" class="btn btn-secondary" id="fontSmaller">-</button>
+               </div>
+            </div>
+            <div class="col">
+               <div class="custom-control custom-switch">
+                  <input type="checkbox" class="custom-control-input" id="showPoints">
+                  <label class="custom-control-label" for="showPoints">Points</label>
+               </div>
+            </div>
+         </div>
 
      </div>`
    }
@@ -470,8 +506,89 @@ async function getNoPrint() {
    </div>`
 }
 
+function changeFont(){
+
+   var font = document.getElementById("fontChoise").value
+   console.log("chainging font to " + font)
+
+   switch(font) {
+    case "Amatic SC":
+       font = "'Amatic SC', cursive"
+       break;
+    case "Comic Neue":
+       font = "'Comic Neue', cursive"
+       break;
+    case "Cormorant Garamond":
+       font = "'Cormorant Garamond', serif"
+       break;
+    case "Indie Flower":
+       font = "'Indie Flower', cursive"
+       break;
+    case "Open Sans":
+       font = "'Open Sans', sans-serif"
+       break;
+    case "Playfair Display":
+       font = "'Playfair Display', serif"
+       break;
+    case "Raleway":
+       font = "'Raleway', sans-serif"
+       break;
+    case "Roboto Mono":
+       font = "'Roboto Mono', monospace"
+       break;
+    default:
+      font = '"Helvetica Neue"'
+    }
 
 
+   document.body.setAttribute('style', 'font-family: ' + font + ' !important');
+}
+
+var sizeI = 3
+function fontLarger(){
+
+   var sizes = ["xx-small","x-small","small","medium","large","x-large","xx-large"]
+   if (sizeI < 6){
+      sizeI += 1
+   }
+   document.getElementById("fontSmaller").disabled = sizeI <= 0;
+   document.getElementById("fontLarger").disabled = sizeI >= 6;
+  document.body.style.fontSize = sizes[sizeI]
+}
+
+function fontSmaller(){
+   var sizes = ["xx-small","x-small","small","medium","large","x-large","xx-large"]
+   if (sizeI > 0 ){
+      sizeI -= 1
+   }
+
+   document.getElementById("fontSmaller").disabled = sizeI <= 0;
+   document.getElementById("fontLarger").disabled = sizeI >= 6;
+
+   document.body.style.fontSize = sizes[sizeI]
+}
+
+function togglePoints(){
+   console.log("Called")
+   console.log("Value: " + document.getElementById("showPoints").checked)
+
+   var show = document.getElementById("showPoints").checked
+
+   elements = document.getElementsByClassName("points");
+   for (var i = 0; i < elements.length; i++) {
+      elements[i].style.display = show ?  'inherit' : 'none' ;
+   }
+}
+
+function formListeners(){
+   console.log("running")
+   document.getElementById("fontChoise").addEventListener("change", changeFont);
+   document.getElementById("fontLarger").addEventListener("click", fontLarger);
+   document.getElementById("fontSmaller").addEventListener("click", fontSmaller);
+   document.getElementById("showPoints").addEventListener("change", togglePoints);
+   document.getElementById("showPoints").checked = true;
+
+}
 
 //https://html-online.com/articles/get-url-parameters-javascript/
 function getUrlVars() {
@@ -502,5 +619,8 @@ Array.prototype.shuffle = function() {
  * begining.
  *******************************************************/
 function parseJSON(data){
-   return JSON.parse(data.substring("while(1);".length))
+   if(data.startsWith("while(1);")){
+      return JSON.parse(data.substring("while(1);".length))
+   }
+   return JSON.parse(data)
 }
