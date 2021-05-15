@@ -83,15 +83,10 @@ async function fetchQuestion(url){
 
 async function getQuizHeader(baseURL, courseID, quizID){
    var url = baseURL + "/courses/" + courseID + "/quizzes/" + quizID
-
-   console.log(url)
    return await fetch(url).then(r => r.text()).then(result => {
-      console.log(result)
        var data = parseJSON(result);
-       console.log(data)
        return data
    })
-
 }
 
 /*******************************************************
@@ -283,7 +278,6 @@ function shortAnswerQuestion(question){
 
 
 function textOnlyQuestion(question) {
-   console.log(question)
    var questionText = pointsToText(question) + question.question_text;
 
    var output = `<div class="question-block">`
@@ -509,7 +503,7 @@ async function getNoPrint() {
 function changeFont(){
 
    var font = document.getElementById("fontChoise").value
-   console.log("chainging font to " + font)
+   console.log("changing font to " + font)
 
    switch(font) {
     case "Amatic SC":
@@ -569,7 +563,6 @@ function fontSmaller(){
 }
 
 function togglePoints(){
-   console.log("Called")
    console.log("Value: " + document.getElementById("showPoints").checked)
 
    var show = document.getElementById("showPoints").checked

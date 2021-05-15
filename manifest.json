@@ -1,7 +1,7 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 2.1,
   "name": "Canvas Quiz Printer",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Easily print quizzes from Canvas.",
   "background": {
     "scripts": ["background.js"],
